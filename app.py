@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 
 from nlp.pipeline import MedEasyPipeline
-from models.chatbot_engine import ChatbotEngine, OLLAMA_BASE_URL, OLLAMA_MODEL
+from models.chatbot_engine import ChatbotEngine, OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_MAX_TOKENS
 from database.db import (
     init_db, create_user, get_user_by_email, get_user_by_id,
     update_user, delete_user, save_report, get_user_reports,
