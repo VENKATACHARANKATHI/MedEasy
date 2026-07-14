@@ -3,6 +3,7 @@ const API = async (url, opts = {}) => {
   const userTokenRaw = localStorage.getItem('medeasy_token') || localStorage.getItem('token') || null;
   let token = null;
   try { token = userTokenRaw ? JSON.parse(userTokenRaw) : null; } catch(e){ token = userTokenRaw; }
+  console.debug('[API] token:', token);
 
   const providedHeaders = Object.assign({}, opts.headers || {});
   // If body is FormData, do not set Content-Type (browser will set multipart boundary)
@@ -13,8 +14,8 @@ const API = async (url, opts = {}) => {
 
   const fetchOpts = Object.assign({}, opts, {
     headers: providedHeaders,
-    // Ensure cookies/session are sent for same-origin requests
-    credentials: providedHeaders['Authorization'] ? 'omit' : (opts.credentials || 'same-origin')
+    // Always include credentials (cookies) so Flask session cookies are sent
+    credentials: opts.credentials || 'include'
   });
 
   const r = await fetch(url, fetchOpts);
