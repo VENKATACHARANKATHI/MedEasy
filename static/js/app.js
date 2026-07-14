@@ -748,7 +748,7 @@ function showToast(msg,type){
 // ── CHATBOT ───────────────────────────────────────────────────
 async function checkOllamaStatus(){
   try {
-    const r=await fetch('/api/chat/status'); const d=await r.json();
+    const d=await API('/api/chat/status');
     const st=document.getElementById('botSt'); const notice=document.getElementById('ollamaNotice');
     if(d.status==='ready'){st.textContent='🟢 phi3 ready — local AI active';st.style.color='var(--grn)';if(notice)notice.style.display='none';}
     else if(d.status==='phi3_not_pulled'){st.textContent='⚠️ phi3 not pulled';st.style.color='var(--ylw)';if(notice)notice.style.display='block';}
@@ -774,9 +774,15 @@ async function sendChat(){
   const msgs=document.getElementById('chatMsgs');
   let botDiv=null;
   try {
-    const resp=await fetch('/api/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,language:lang,report_context:reportCtx})});
+    const resp = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message:msg,language:lang,report_context:reportCtx}),
+      credentials: 'include'
+    });
     document.getElementById('typing')?.remove();
-    const reader=resp.body.getReader(); const decoder=new TextDecoder(); let fullText='';
+    if(!resp.body) throw new Error('No stream available');
+    const reader = resp.body.getReader(); const decoder=new TextDecoder(); let fullText='';
     while(true){
       const {done,value}=await reader.read(); if(done) break;
       const chunk=decoder.decode(value); const lines=chunk.split('\n');
