@@ -21,6 +21,7 @@ Ollama integration:
   - No API key, no cost, fully private — runs on your machine
 """
 
+import os
 import json
 import requests
 import numpy as np
@@ -30,13 +31,13 @@ from data.medical_terms import MEDICAL_TERMS
 from data.lab_ranges import LAB_RANGES, SUGGESTIONS
 
 # ── Ollama Configuration ────────────────────────────────────────
-OLLAMA_BASE_URL   = "http://localhost:11434"
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 # phi3:mini is 3.8B params — 4x faster than phi3 (14B) with similar quality for medical Q&A
 # Run: ollama pull phi3:mini
 # Fallback: phi3 (14B) — slower but more detailed
-OLLAMA_MODEL      = "phi3:mini"
-OLLAMA_TIMEOUT    = 45
-OLLAMA_MAX_TOKENS = 300   # Shorter = faster. Medical answers rarely need more.
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "phi3:mini")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "45"))
+OLLAMA_MAX_TOKENS = int(os.environ.get("OLLAMA_MAX_TOKENS", "300"))   # Shorter = faster. Medical answers rarely need more.
 
 
 class ChatbotEngine:
