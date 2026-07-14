@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MedEasy — How It Works</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+main{padding-top:80px;max-width:900px;margin:0 auto;padding-bottom:4rem;z-index:1;position:relative}
+h1{font-family:'DM Serif Display',serif;font-size:2.4rem;color:#fff;margin-bottom:.5rem}
+h2{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--acc);margin:2rem 0 .8rem}
+h3{font-size:1rem;font-weight:700;color:#fff;margin:.8rem 0 .3rem}
+p,li{font-size:.92rem;line-height:1.85;color:var(--txt);margin-bottom:.5rem}
+ul{padding-left:1.4rem}
+code{background:var(--surf2);border:1px solid var(--bdr);padding:2px 8px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--acc)}
+pre{background:var(--surf2);border:1px solid var(--bdr);border-radius:12px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-family:monospace;font-size:.83rem;color:#e2e8f0;line-height:1.7}
+.stage{background:var(--card);border:1px solid var(--bdr);border-radius:15px;padding:1.2rem 1.4rem;margin-bottom:1rem;border-left:4px solid var(--acc)}
+.formula{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:.8rem 1.2rem;font-family:monospace;font-size:.88rem;color:var(--ylw);margin:.6rem 0}
+</style>
+</head>
+<body>
+<nav><a class="logo" href="/">🧬 MedEasy</a></nav>
+<main style="padding-left:1.2rem;padding-right:1.2rem">
+<h1>How MedEasy Works</h1>
+<p>MedEasy uses a custom 5-stage NLP pipeline built entirely from scratch — no external AI APIs for the core analysis.</p>
+
+<h2>Pipeline Overview</h2>
+<div class="stage"><h3>Stage 1 — MedicalTokenizer</h3><p>Cleans raw text: fixes PDF space-joins, converts lakh notation, removes range columns, normalizes encoding. Inserts newlines before test names to split PDF-extracted text.</p></div>
+<div class="stage"><h3>Stage 2 — MedicalNER (Named Entity Recognition)</h3><p>Regex-based extraction of: patient name, age, gender, date, conditions (14 types), medications (30+ drugs).</p></div>
+<div class="stage"><h3>Stage 3 — LabExtractor</h3><p>Master regex finds all (test_name, value, unit) triples. Resolves 40+ aliases. Compares against LAB_RANGES → Normal / High / Low / Critical High / Critical Low. Collects suggestion keys.</p></div>
+<div class="stage"><h3>Stage 4 — ReportTypeClassifier (TF-IDF + Naive Bayes)</h3><p>Vectorizes text with custom TF-IDF. Predicts one of 10 report categories using Multinomial Naive Bayes (Laplace smoothing α=0.5). Trained on 74 samples, trains in &lt;1s.</p></div>
+<div class="stage"><h3>Stage 5 — MedicalSimplifier + Translator</h3><p>Computes overall status from abnormal ratio. Generates plain-language explanation and doctor advice in 6 languages using template system.</p></div>
+
+<h2>Machine Learning Algorithms</h2>
+<h3>TF-IDF Formula</h3>
+<div class="formula">TF(t,d)  = count(t in d) / |d|<br>IDF(t)   = log((1 + N) / (1 + df(t))) + 1<br>TF-IDF   = TF × IDF</div>
+<h3>Naive Bayes Formula</h3>
+<div class="formula">log P(class|doc) = log P(class) + Σ [ x_i × log P(word_i|class) ]<br>Laplace:  P(word|class) = (count + α) / (total + α × |vocab|)   [α = 0.5]</div>
+<h3>Cosine Similarity (Chatbot)</h3>
+<div class="formula">sim(A, B) = A·B / (||A|| × ||B||)   threshold = 0.12</div>
+
+<h2>API Reference</h2>
+<pre>POST /api/analyze       { "text": "...", "language": "English" }
+POST /api/chat          { "message": "...", "language": "...", "api_key": "gsk_...", "provider": "groq" }
+POST /api/auth/signup   { "name": "...", "email": "...", "password": "..." }
+POST /api/auth/login    { "email": "...", "password": "..." }
+POST /api/auth/logout
+GET  /api/auth/me
+PUT  /api/auth/profile  { "name": "...", "email": "..." }
+PUT  /api/auth/password { "password": "..." }
+GET  /api/reports
+POST /api/reports/save  { "result": {...}, "raw_text": "..." }
+GET  /api/reports/&lt;id&gt;
+DELETE /api/reports/&lt;id&gt;
+GET  /api/stats</pre>
+
+<p><a href="/" style="color:var(--acc)">← Back to MedEasy</a></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedEasy — Medical Report Simplifier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<script>window._PDFW='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" onload="pdfjsLib.GlobalWorkerOptions.workerSrc=window._PDFW"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toastWrap"></div>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" onclick="goHome()" style="text-decoration:none">
+    <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#38bdf8,#818cf8);display:flex;align-items:center;justify-content:center;font-size:.9rem">🧬</div>
+    <span>Med<em style="font-style:normal;color:#38bdf8">Easy</em></span>
+    <div class="pulse"></div>
+  </a>
+  <div class="nav-r">
+    <span class="nav-badge" id="navBadge">Flask + phi3 AI</span>
+    <div id="navUser" style="display:none;align-items:center;gap:.6rem">
+      <div class="nav-avatar" id="navAv" onclick="showPage('profile')" title="Profile"></div>
+      <span style="font-size:.85rem;font-weight:600;color:var(--txt)" id="navUname"></span>
+      <button class="btn-sm btn-outline" onclick="showPage('history')">📂 History</button>
+      <button class="btn-sm btn-outline" onclick="doLogout()">Sign Out</button>
+    </div>
+    <div id="navAuthBtns" style="display:flex;gap:.5rem">
+      <button class="btn-sm btn-outline" onclick="showPage('login')">Sign In</button>
+      <button class="btn-sm btn-primary" onclick="showPage('signup')">Sign Up</button>
+    </div>
+    <!-- Language selector — hidden until logged in -->
+    <div id="langSelWrap" style="display:none;align-items:center">
+      <select id="langSel" class="lang-sel">
+        <option value="English">EN</option>
+        <option value="Hindi">HI</option>
+        <option value="Marathi">MR</option>
+        <option value="Bengali">BN</option>
+        <option value="Tamil">TA</option>
+        <option value="Telugu">TE</option>
+      </select>
+    </div>
+  </div>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page">
+  <div class="auth-wrap"><div class="auth-card">
+    <div class="auth-icon">🧬</div>
+    <div class="auth-title">Welcome Back</div>
+    <div class="auth-sub">Sign in to access your report history and health insights</div>
+    <div id="liErr" class="auth-err"></div>
+    <div class="form-group"><label class="form-lbl">Email</label><input type="email" id="liEmail" class="form-inp" placeholder="you@example.com"></div>
+    <div class="form-group"><label class="form-lbl">Password</label>
+      <div class="pwd-wrap"><input type="password" id="liPwd" class="form-inp" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:38px">
+      <button class="pwd-eye" onclick="togglePwd('liPwd',this)">👁</button></div>
+    </div>
+    <button class="btn-auth" id="liBtn" onclick="doLogin()">Sign In</button>
+    <div class="auth-sep"><span>or</span></div>
+    <button class="btn-ghost" onclick="doGuest()">👤 Continue as Guest</button>
+    <div class="auth-foot">No account? <a class="auth-lnk" onclick="showPage('signup')">Create one free</a></div>
+  </div></div>
+</div>
+
+<!-- SIGNUP -->
+<div id="signupPage" class="page">
+  <div class="auth-wrap"><div class="auth-card">
+    <div class="auth-icon">✨</div>
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">Join MedEasy to save reports and track your health over time</div>
+    <div id="suErr" class="auth-err"></div>
+    <div id="suOk" class="auth-ok"></div>
+    <div class="form-group"><label class="form-lbl">Full Name</label><input type="text" id="suName" class="form-inp" placeholder="Ramesh Kumar"></div>
+    <div class="form-group"><label class="form-lbl">Email</label><input type="email" id="suEmail" class="form-inp" placeholder="you@example.com"></div>
+    <div class="form-group"><label class="form-lbl">Password</label>
+      <div class="pwd-wrap"><input type="password" id="suPwd" class="form-inp" placeholder="Min 6 characters" oninput="chkPwd(this.value)" style="padding-right:38px">
+      <button class="pwd-eye" onclick="togglePwd('suPwd',this)">👁</button></div>
+      <div class="pwd-bar-wrap"><div class="pwd-bar" id="pwdBar"></div></div>
+      <div style="font-size:.71rem;margin-top:.2rem;color:var(--mut)" id="pwdLbl"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Confirm Password</label><input type="password" id="suPwd2" class="form-inp" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doSignup()"></div>
+    <button class="btn-auth" id="suBtn" onclick="doSignup()">Create Account</button>
+    <div class="auth-foot">Have an account? <a class="auth-lnk" onclick="showPage('login')">Sign in</a></div>
+  </div></div>
+</div>
+
+<!-- HOME -->
+<div id="homePage" class="page">
+<main>
+  <section id="heroSec">
+    <div class="hero-badge">🧬 Custom NLP · Naive Bayes · TF-IDF · phi3 AI (Local)</div>
+    <h1>Understand Your<br><em>Medical Reports</em></h1>
+    <p class="hero-sub">Upload any lab report and our custom NLP pipeline extracts values, classifies abnormal results, and explains them in plain language across 6 languages — powered by phi3 AI running locally on your machine.</p>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val">50+</div><div class="hstat-lbl">Lab Tests</div></div>
+      <span style="color:var(--bdr)">|</span>
+      <div class="hstat"><div class="hstat-val">6</div><div class="hstat-lbl">Languages</div></div>
+      <span style="color:var(--bdr)">|</span>
+      <div class="hstat"><div class="hstat-val">phi3</div><div class="hstat-lbl">Local AI</div></div>
+    </div>
+    <div class="up-card">
+      <div class="sample-lbl">Try a sample report:</div>
+      <div class="sample-row">
+        <button class="sample-btn" onclick="loadSample('diabetes')">🩸 Diabetes Panel</button>
+        <button class="sample-btn" onclick="loadSample('cbc')">🔬 CBC Report</button>
+        <button class="sample-btn" onclick="loadSample('lipid')">🫀 Lipid Profile</button>
+        <button class="sample-btn" onclick="loadSample('full')">📋 Full Panel</button>
+      </div>
+      <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
+        <input type="file" id="fi" accept=".pdf,.docx,.doc,.txt,.rtf,.csv,.md" hidden>
+        <div class="dz-icon">📋</div>
+        <div class="dz-title">Drop your medical report here</div>
+        <div class="dz-sub">PDF · DOCX · TXT · RTF · CSV — all processed in browser</div>
+        <div id="fileTag" class="file-tag" style="display:none"></div>
+      </div>
+      <div class="fmt-bar">Supported: PDF (server-extracted) · DOCX · TXT · RTF · CSV</div>
+      <div id="extractMsg"></div>
+      <div class="or-sep"><span>or paste report text</span></div>
+      <textarea id="reportTxt" placeholder="Paste your lab report here...&#10;Example:&#10;Hemoglobin : 10.2 g/dL&#10;WBC        : 12500 /uL&#10;HbA1c      : 7.8 %"></textarea>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn-analyze" id="analyzeBtn" onclick="doAnalyze()" disabled style="flex:1">🔬 Analyze Report</button>
+        <button id="saveRptBtn" class="btn-save-rpt" onclick="saveCurrentReport()" style="display:none">💾 Save</button>
+      </div>
+      <div class="guest-hint" id="guestHint" style="display:none"><a onclick="showPage('signup')">Create a free account</a> to sync reports to server</div>
+    </div>
+  </section>
+
+  <div id="loadSec">
+    <div class="spinner-wrap"><div class="spinner"></div><div class="spinner2"></div></div>
+    <div id="loadStep" class="load-step">Tokenizing report...</div>
+    <div style="font-size:.77rem;color:var(--mut);margin-top:.2rem">Running 5-stage NLP pipeline</div>
+    <div class="load-bar-wrap"><div class="load-bar"></div></div>
+  </div>
+
+  <section id="dashSec">
+    <div class="dash-hdr">
+      <div><div class="sec-title">Health <span>Summary</span></div><div class="meta-row" id="metaRow"></div></div>
+      <div class="dash-btns"><button class="btn-new" onclick="resetApp()">↩ New Report</button></div>
+    </div>
+    <div id="urgentBanner"></div>
+    <div class="sum-row" id="sumRow"></div>
+
+    <div class="dash-grid">
+      <!-- Plain Language Explanation -->
+      <div class="card card-full"><div class="card-lbl">💬 Plain Language Explanation</div><div id="explainTxt"></div></div>
+
+      <!-- Disease Detection -->
+      <div class="card card-full" id="diseaseDetect" style="display:none">
+        <div class="card-lbl" id="diseaseDetectTitle">🔬 Detected Health Conditions</div>
+        <div id="diseaseDetectContent" class="disease-grid"></div>
+      </div>
+
+      <!-- Blood Test Cards (categorized) -->
+      <div class="card card-full" id="testCardsWrap" style="display:none">
+        <div class="card-lbl">🧪 Detailed Test Results</div>
+        <!-- rendered by renderBloodTestCards() -->
+      </div>
+
+      <!-- Suggestions (language-aware) -->
+      <div class="card">
+        <div class="card-lbl" id="suggTitle">💡 Diet & Health Recommendations</div>
+        <div id="suggList"></div>
+      </div>
+
+      <!-- Doctor Consultation -->
+      <div class="card" id="doctorSection">
+        <div class="card-lbl" id="doctorSectionTitle">🏥 Doctor Consultation & Advice</div>
+        <div id="doctorContent" style="font-size:.88rem;line-height:1.85"></div>
+      </div>
+
+      <!-- Detected Conditions (patient NER) -->
+      <div class="card" id="condCard" style="display:none"><div class="card-lbl">🔍 Patient Conditions (Detected)</div><div id="condContent"></div></div>
+    </div>
+
+    <!-- Full Summary (bottom) -->
+    <div class="card card-full" style="margin-top:1rem">
+      <div class="card-lbl" id="fullSummaryTitle">📊 Full Report Summary</div>
+      <div id="fullSummaryContent"></div>
+    </div>
+
+    <div class="disclaimer"><strong>Medical Disclaimer:</strong> For educational purposes only. Always consult a qualified healthcare provider.</div>
+  </section>
+</main>
+</div>
+
+<!-- PROFILE -->
+<div id="profilePage" class="page">
+  <main style="padding-top:80px">
+    <div class="prof-hdr">
+      <div class="prof-av" id="pAv"></div>
+      <div><div class="prof-name" id="pName"></div><div class="prof-email" id="pEmail"></div></div>
+    </div>
+    <div class="prof-stats">
+      <div class="pstat"><div class="pstat-val" id="pReports">0</div><div class="pstat-lbl">Reports Saved</div></div>
+      <div class="pstat"><div class="pstat-val" id="pAbnormal">0</div><div class="pstat-lbl">Abnormal Findings</div></div>
+      <div class="pstat"><div class="pstat-val" id="pLang">EN</div><div class="pstat-lbl">Language</div></div>
+      <div class="pstat"><div class="pstat-val" id="pJoined">—</div><div class="pstat-lbl">Member Since</div></div>
+    </div>
+    <div class="prof-sec"><div class="prof-sec-title">✏️ Edit Profile</div>
+      <div class="prof-grid">
+        <div class="form-group"><label class="form-lbl">Full Name</label><input type="text" id="pEditName" class="form-inp"></div>
+        <div class="form-group"><label class="form-lbl">Email</label><input type="email" id="pEditEmail" class="form-inp"></div>
+      </div>
+      <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+    </div>
+    <div class="prof-sec"><div class="prof-sec-title">🔒 Change Password</div>
+      <div class="prof-grid">
+        <div class="form-group"><label class="form-lbl">New Password</label><input type="password" id="pPwd1" class="form-inp" placeholder="Min 6 characters"></div>
+        <div class="form-group"><label class="form-lbl">Confirm</label><input type="password" id="pPwd2" class="form-inp" placeholder="Repeat"></div>
+      </div>
+      <button class="btn-save" onclick="changePwd()">Update Password</button>
+    </div>
+    <div class="prof-sec"><div class="prof-sec-title">⚠️ Danger Zone</div>
+      <p style="font-size:.84rem;color:var(--mut);margin-bottom:.8rem">Permanently delete your account and all saved reports.</p>
+      <button class="btn-danger" onclick="deleteAccount()">🗑️ Delete Account</button>
+    </div>
+  </main>
+</div>
+
+<!-- HISTORY -->
+<div id="historyPage" class="page">
+  <main style="padding-top:80px;max-width:960px">
+    <div class="hist-hdr">
+      <div class="pg-title">Report <span>History</span></div>
+      <div class="hist-filters">
+        <button class="flt-btn active" onclick="filterHist('all',this)">All</button>
+        <button class="flt-btn" onclick="filterHist('Good',this)">🟢 Good</button>
+        <button class="flt-btn" onclick="filterHist('Fair',this)">🟡 Fair</button>
+        <button class="flt-btn" onclick="filterHist('Attention',this)">🟠 Attention</button>
+        <button class="flt-btn" onclick="filterHist('Critical',this)">🔴 Critical</button>
+      </div>
+    </div>
+    <div id="histList"></div>
+  </main>
+</div>
+
+<!-- CHATBOT -->
+<button id="chatFab" onclick="toggleChat()" title="MedBot — phi3 AI">💬</button>
+<div id="chatPanel">
+  <div class="chat-hdr">
+    <div class="chat-av">🤖</div>
+    <div style="flex:1">
+      <div class="chat-nm">MedBot <span style="font-size:.62rem;background:rgba(56,189,248,.15);color:#38bdf8;padding:1px 7px;border-radius:100px;margin-left:4px">phi3</span></div>
+      <div class="chat-st" id="botSt">Checking Ollama...</div>
+    </div>
+    <button onclick="toggleChat()" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:1rem;padding:4px">✕</button>
+  </div>
+  <div id="ollamaNotice" style="display:none;padding:.5rem .9rem;background:rgba(251,191,36,.08);border-bottom:1px solid rgba(251,191,36,.2);font-size:.72rem;color:#fbbf24;line-height:1.6">
+    ⚠️ <strong>Ollama not running.</strong> Start it with <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">ollama serve</code>
+    and pull the model with <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px">ollama pull phi3</code>.
+    Basic Q&amp;A still works without it.
+  </div>
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="msg bot">👋 Hi! I'm <strong>MedBot</strong> powered by <strong>phi3</strong> — running locally on your machine, no API key needed, completely private! Ask me anything about your report. 🧠</div>
+  </div>
+  <div class="chat-row">
+    <input type="text" id="chatIn" class="chat-in" placeholder="Ask anything about your report..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="send-btn" id="sendBtn" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
