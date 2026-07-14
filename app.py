@@ -113,6 +113,28 @@ def chat_status():
     })
 
 
+@app.route("/api/debug/ollama")
+def debug_ollama():
+    """Debug helper: from the running server, try to reach the configured Ollama URL
+    and return either the models payload or the error text. Useful to debug Render
+    network connectivity from the service."""
+    import requests as req
+    from urllib.parse import urlparse
+
+    base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    try:
+        parsed = urlparse(base)
+        target = f"{base.rstrip('/')}/api/tags"
+        r = req.get(target, timeout=6)
+        return jsonify({
+            "url": base,
+            "status_code": r.status_code,
+            "content_preview": r.text[:2000]
+        })
+    except Exception as e:
+        return jsonify({"url": base, "error": str(e)}), 500
+
+
 @app.route("/api/chat/stream", methods=["POST"])
 def chat_stream():
     """
