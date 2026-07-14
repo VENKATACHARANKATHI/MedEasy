@@ -1,6 +1,7 @@
 """MedEasy Flask Application - All API Routes"""
 import os, io, json
 from flask import Flask, request, jsonify, session, render_template, send_from_directory
+from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
@@ -16,6 +17,10 @@ from database.db import (
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "medeasy-dev-secret-2025")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+CORS(app, supports_credentials=True)
 ALLOWED = {"pdf","txt","docx","doc","rtf","csv","md"}
 
 pipeline = MedEasyPipeline()
