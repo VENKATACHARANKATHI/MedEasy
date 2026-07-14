@@ -101,9 +101,9 @@ window.addEventListener('load', async () => {
 
   try {
     const me = await API('/api/auth/me');
-    if(me.id){ currentUser = me; onLoginOk(false); }
-    else { showPage('login'); }
-  } catch(e){ showPage('login'); }
+    if(me.id){ currentUser = me; onLoginOk(false); return; }
+  } catch(e){ /* ignore and continue as guest */ }
+  doGuest();
 });
 
 function hideLangSel() {
