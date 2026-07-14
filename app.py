@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 
 from nlp.pipeline import MedEasyPipeline
-from models.chatbot_engine import ChatbotEngine
+from models.chatbot_engine import ChatbotEngine, OLLAMA_BASE_URL, OLLAMA_MODEL
 from database.db import (
     init_db, create_user, get_user_by_email, get_user_by_id,
     update_user, delete_user, save_report, get_user_reports,
@@ -94,7 +94,7 @@ def chat_status():
     running = chatbot.is_ollama_running()
     try:
         import requests as req
-        tags = req.get("http://localhost:11434/api/tags", timeout=3).json()
+        tags = req.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3).json()
         models = [m["name"] for m in tags.get("models", [])]
         phi3_ready = any("phi3" in m for m in models)
     except Exception:
@@ -107,7 +107,7 @@ def chat_status():
                   "ollama_offline" if not running else "phi3_not_pulled",
         "setup": {
             "1_install": "https://ollama.ai",
-            "2_pull":    "ollama pull phi3",
+            "2_pull":    f"ollama pull {OLLAMA_MODEL}",
             "3_serve":   "ollama serve",
         }
     })
@@ -145,11 +145,11 @@ def chat_stream():
     def stream_ollama():
         try:
             with req.post(
-                "http://localhost:11434/api/chat",
+                f"{OLLAMA_BASE_URL}/api/chat",
                 json={
-                    "model": "phi3:mini",
+                    "model": OLLAMA_MODEL,
                     "stream": True,
-                    "options": {"num_predict": 300, "temperature": 0.7, "num_ctx": 2048},
+                    "options": {"num_predict": OLLAMA_MAX_TOKENS, "temperature": 0.7, "num_ctx": 2048},
                     "messages": [
                         {"role": "system", "content": system},
                         {"role": "user",   "content": msg},
