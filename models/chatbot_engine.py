@@ -214,49 +214,8 @@ class ChatbotEngine:
             }
             return U.get(language, U["English"])
 
-        if intent == "explain_term":
-            for term in sorted(MEDICAL_TERMS.keys(), key=len, reverse=True):
-                if term in t:
-                    return f"📖 **{term.upper()}**: {MEDICAL_TERMS[term]}"
-            return None  # let Ollama explain unknown terms
-
-        if intent == "normal_range":
-            for key in sorted(LAB_RANGES.keys(), key=len, reverse=True):
-                info = LAB_RANGES[key]
-                if info.get("alias") or key not in t:
-                    continue
-                u = info.get("unit", "")
-                if info.get("male") and info.get("female"):
-                    return (f"📊 **{info.get('name', key.upper())}** — "
-                            f"Men: {info['male'][0]}–{info['male'][1]} {u} | "
-                            f"Women: {info['female'][0]}–{info['female'][1]} {u}")
-                elif info.get("gen"):
-                    return f"📊 **{info.get('name', key.upper())}** normal range: {info['gen'][0]}–{info['gen'][1]} {u}"
-            return None  # let Ollama answer unknown ranges
-
-        if intent == "report_summary" and report_context:
-            r  = report_context
-            ab = r.get("abnormal_values", r.get("abnormal", []))
-            ab_list = ", ".join(
-                f"{v['name']} ({v.get('strans', v.get('status',''))})"
-                for v in ab[:5]
-            )
-            return (
-                f"📋 **{r.get('report_type', 'Report')}**: "
-                f"{r.get('total_tests', 0)} tests — "
-                f"{r.get('normal_count', 0)} normal ✅, "
-                f"{r.get('abnormal_count', 0)} need attention ⚠️."
-                + (f" Flagged: {ab_list}." if ab_list else " All values normal! 🎉")
-                + f"\n{r.get('doctor_advice', '')}"
-            )
-
-        if intent == "health_advice" and report_context:
-            suggestions = report_context.get("suggestions", [])
-            if suggestions:
-                s = suggestions[0]
-                return f"{s['icon']} **{s['title']}**: {s['detail']}"
-
-        # All other intents → Ollama
+        # Only use local canned responses for greetings, farewells, and urgent symptoms.
+        # All other questions should be handled by Ollama for a natural chat experience.
         return None
 
     # ── Main Entry Point ──────────────────────────────────────────
