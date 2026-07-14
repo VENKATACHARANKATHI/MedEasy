@@ -1,6 +1,23 @@
 /* MedEasy Frontend — All UI Logic — v2.0 (Fixed) */
-const API = async (url, opts={}) => {
-  const r = await fetch(url, {headers:{'Content-Type':'application/json'}, ...opts});
+const API = async (url, opts = {}) => {
+  const userTokenRaw = localStorage.getItem('medeasy_token') || localStorage.getItem('token') || null;
+  let token = null;
+  try { token = userTokenRaw ? JSON.parse(userTokenRaw) : null; } catch(e){ token = userTokenRaw; }
+
+  const providedHeaders = Object.assign({}, opts.headers || {});
+  // If body is FormData, do not set Content-Type (browser will set multipart boundary)
+  if (!(opts.body instanceof FormData) && !providedHeaders['Content-Type']) {
+    providedHeaders['Content-Type'] = 'application/json';
+  }
+  if (token) providedHeaders['Authorization'] = providedHeaders['Authorization'] || `Bearer ${token}`;
+
+  const fetchOpts = Object.assign({}, opts, {
+    headers: providedHeaders,
+    // Ensure cookies/session are sent for same-origin requests
+    credentials: providedHeaders['Authorization'] ? 'omit' : (opts.credentials || 'same-origin')
+  });
+
+  const r = await fetch(url, fetchOpts);
   return r.json();
 };
 
