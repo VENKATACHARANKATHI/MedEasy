@@ -49,6 +49,3 @@ medeasy/
 | GET  | /api/history | Report history |
 | POST | /api/report/save | Save report |
 
-## MedBot — Free AI Keys
-
-Get a free Groq key at console.groq.com (no credit card needed).
